@@ -2,23 +2,33 @@ export default function FastestBoostWebsite() {
   const services = [
     {
       title: 'Faceit Elo Boost',
-      price: 'from $2 / match',
-      text: 'Fast Elo boosting for players who want to climb without wasting time.',
+      price: 'custom price',
+      text: 'Classic Elo boosting with flexible order setup based on your current rating and target.',
     },
     {
       title: 'Faceit Level Boost',
       price: 'custom price',
-      text: 'Level up your Faceit account from your current level to your target level.',
+      text: 'Upgrade your account from the current Faceit level to the level you want.',
     },
     {
-      title: 'Duo Queue',
-      price: 'from $4 / match',
-      text: 'Play together with a booster for a safer and more comfortable experience.',
-    },
-    {
-      title: 'Placement Matches',
+      title: 'Faceit Wins Boost',
       price: 'custom price',
-      text: 'Reliable help for important placement or calibration matches.',
+      text: 'Order a set number of net wins for a simple and clear boost option.',
+    },
+    {
+      title: 'Faceit Stats Boost',
+      price: 'custom price',
+      text: 'Focused boost option for better account stats like KD, average kills and overall match profile.',
+    },
+    {
+      title: 'Duo Queue / Lobby Boost',
+      price: 'custom price',
+      text: 'Play together with a booster in duo or lobby format for a more comfortable experience.',
+    },
+    {
+      title: 'Faceit Coaching',
+      price: 'custom price',
+      text: 'One-on-one help for players who want to improve decision making, mechanics and match understanding.',
     },
   ];
 
@@ -34,7 +44,7 @@ export default function FastestBoostWebsite() {
   const steps = [
     {
       title: 'Choose service',
-      text: 'Select the service you need: Elo Boost, Level Boost, Duo Queue or Placement Matches.',
+      text: 'Select the service you need: Elo Boost, Level Boost, Wins Boost, Stats Boost, Duo Queue or Coaching.',
     },
     {
       title: 'Fill the form',
@@ -145,8 +155,10 @@ export default function FastestBoostWebsite() {
                   <option>Choose service</option>
                   <option>Faceit Elo Boost</option>
                   <option>Faceit Level Boost</option>
-                  <option>Duo Queue</option>
-                  <option>Placement Matches</option>
+                  <option>Faceit Wins Boost</option>
+                  <option>Faceit Stats Boost</option>
+                  <option>Duo Queue / Lobby Boost</option>
+                  <option>Faceit Coaching</option>
                 </select>
                 <input className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none" placeholder="Current Elo" />
                 <input className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none" placeholder="Desired Elo" />
@@ -158,7 +170,7 @@ export default function FastestBoostWebsite() {
               </div>
 
               <div className="mt-5 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-zinc-300">
-                Replace this button with your Telegram link, crypto payment link, PayPal, or a Tilda form later.
+                Replace this button with your Telegram link, crypto payment link, or checkout later.
               </div>
             </div>
           </div>
@@ -174,7 +186,7 @@ export default function FastestBoostWebsite() {
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {services.map((service) => (
             <div key={service.title} className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-lg shadow-black/20">
               <div className="text-xl font-bold">{service.title}</div>
@@ -253,27 +265,23 @@ export default function FastestBoostWebsite() {
             </p>
 
             <div className="mt-8 space-y-3 text-sm text-zinc-300">
-              <div>Telegram: @yourtelegram</div>
-              <div>Discord: yourdiscord#0000</div>
-              <div>Payments: USDT / PayPal / Crypto</div>
+              <div>Telegram: @wqe12e1</div>
+              <div>Payments: USDT / Crypto</div>
             </div>
           </div>
 
           <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6">
             <div className="mb-5 text-xl font-bold">Contact / payment block</div>
             <div className="grid gap-4">
-              <a href="https://t.me/yourtelegram" className="rounded-2xl bg-violet-600 px-5 py-3 text-center font-semibold transition hover:bg-violet-500">
+              <a href="https://t.me/wqe12e1" className="rounded-2xl bg-violet-600 px-5 py-3 text-center font-semibold transition hover:bg-violet-500">
                 Open Telegram
               </a>
               <button className="rounded-2xl border border-white/10 px-5 py-3 font-semibold text-zinc-200 transition hover:bg-white/5">
                 Pay with Crypto
               </button>
-              <button className="rounded-2xl border border-white/10 px-5 py-3 font-semibold text-zinc-200 transition hover:bg-white/5">
-                Pay with PayPal
-              </button>
             </div>
             <div className="mt-4 text-xs leading-6 text-zinc-500">
-              Replace the buttons with your real links later.
+              Replace the payment button with your real wallet or checkout link later.
             </div>
           </div>
         </div>
