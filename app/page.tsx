@@ -1,3 +1,5 @@
+'use client';
+
 import { useMemo, useState } from 'react';
 
 const ELO_RULES = [
@@ -18,7 +20,11 @@ const ELO_RULES = [
 const PARTY_MULTIPLIER = 1.5;
 const PLATFORM_FEE_MULTIPLIER = 1.1;
 
-function calculateBoost(currentEloRaw: string, targetEloRaw: string, isParty: boolean) {
+function calculateBoost(
+  currentEloRaw: string,
+  targetEloRaw: string,
+  isParty: boolean
+) {
   const currentElo = Number(currentEloRaw);
   const targetElo = Number(targetEloRaw);
 
@@ -30,13 +36,18 @@ function calculateBoost(currentEloRaw: string, targetEloRaw: string, isParty: bo
   let pointer = currentElo;
 
   while (pointer < targetElo) {
-    const rule = ELO_RULES.find((item) => pointer >= item.min && pointer < item.max);
+    const rule = ELO_RULES.find(
+      (item) => pointer >= item.min && pointer < item.max
+    );
+
     if (!rule) break;
 
     const segmentEnd = Math.min(targetElo, rule.max);
     const eloDelta = segmentEnd - pointer;
     const segmentGames = (eloDelta / 1000) * rule.gamesPer1000;
-    const pricePerGame = isParty ? rule.soloPricePerGame * PARTY_MULTIPLIER : rule.soloPricePerGame;
+    const pricePerGame = isParty
+      ? rule.soloPricePerGame * PARTY_MULTIPLIER
+      : rule.soloPricePerGame;
 
     games += segmentGames;
     basePrice += segmentGames * pricePerGame;
@@ -46,7 +57,8 @@ function calculateBoost(currentEloRaw: string, targetEloRaw: string, isParty: bo
   const roundedGames = Math.round(games);
   const roundedBasePrice = Math.round(basePrice);
   const priceWithFee = Math.round(roundedBasePrice * PLATFORM_FEE_MULTIPLIER);
-  const pricePerGame = roundedGames > 0 ? Math.round(roundedBasePrice / roundedGames) : 0;
+  const pricePerGame =
+    roundedGames > 0 ? Math.round(roundedBasePrice / roundedGames) : 0;
 
   return {
     currentElo,
@@ -65,7 +77,10 @@ export default function FastestBoostWebsite() {
   const [telegram, setTelegram] = useState('');
   const [isParty, setIsParty] = useState(false);
 
-  const result = useMemo(() => calculateBoost(currentElo, targetElo, isParty), [currentElo, targetElo, isParty]);
+  const result = useMemo(
+    () => calculateBoost(currentElo, targetElo, isParty),
+    [currentElo, targetElo, isParty]
+  );
 
   const services = [
     {
@@ -116,7 +131,7 @@ export default function FastestBoostWebsite() {
     },
     {
       title: 'Use calculator',
-      text: 'Enter your current Elo, target Elo and choose solo or party mode to see the estimate.',
+      text: 'Enter your current Elo, target Elo and choose Solo or Party mode to see the estimate.',
     },
     {
       title: 'Pay for order',
@@ -152,15 +167,27 @@ export default function FastestBoostWebsite() {
       <header className="sticky top-0 z-50 border-b border-white/10 bg-black/70 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div>
-            <div className="text-2xl font-black tracking-tight md:text-3xl">FASTESTBOOST</div>
-            <div className="text-xs uppercase tracking-[0.25em] text-zinc-400">CS2 Faceit Service</div>
+            <div className="text-2xl font-black tracking-tight md:text-3xl">
+              FASTESTBOOST
+            </div>
+            <div className="text-xs uppercase tracking-[0.25em] text-zinc-400">
+              CS2 Faceit Service
+            </div>
           </div>
 
           <nav className="hidden items-center gap-6 text-sm text-zinc-300 md:flex">
-            <a href="#services" className="transition hover:text-white">Services</a>
-            <a href="#calculator" className="transition hover:text-white">Calculator</a>
-            <a href="#how" className="transition hover:text-white">How it works</a>
-            <a href="#order" className="transition hover:text-white">Order</a>
+            <a href="#services" className="transition hover:text-white">
+              Services
+            </a>
+            <a href="#calculator" className="transition hover:text-white">
+              Calculator
+            </a>
+            <a href="#how" className="transition hover:text-white">
+              How it works
+            </a>
+            <a href="#order" className="transition hover:text-white">
+              Order
+            </a>
           </nav>
 
           <a
@@ -183,7 +210,9 @@ export default function FastestBoostWebsite() {
               Fast and simple CS2 Faceit boosting website.
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-7 text-zinc-300 md:text-lg">
-              FastestBoost is built for players who want a clean and easy order flow: choose service, calculate the price, send details, pay, and get started.
+              FastestBoost is built for players who want a clean and easy order
+              flow: choose service, calculate the price, send details, pay, and
+              get started.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-4">
@@ -202,8 +231,18 @@ export default function FastestBoostWebsite() {
             </div>
 
             <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-3">
-              {['High Elo boosters', 'Fast response', 'Telegram support', 'Automatic price', 'Faceit focused', 'Same day start'].map((item) => (
-                <div key={item} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-zinc-200">
+              {[
+                'High Elo boosters',
+                'Fast response',
+                'Telegram support',
+                'Automatic price',
+                'Faceit focused',
+                'Same day start',
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-zinc-200"
+                >
                   {item}
                 </div>
               ))}
@@ -215,7 +254,9 @@ export default function FastestBoostWebsite() {
               <div className="mb-5 flex items-center justify-between">
                 <div>
                   <div className="text-lg font-bold">Faceit calculator</div>
-                  <div className="text-sm text-zinc-400">Price estimate based on your screenshots</div>
+                  <div className="text-sm text-zinc-400">
+                    Price estimate based on your calculator
+                  </div>
                 </div>
                 <div className="rounded-xl bg-violet-500/15 px-3 py-1 text-xs font-semibold text-violet-200">
                   {isParty ? 'Party' : 'Solo'}
@@ -258,18 +299,27 @@ export default function FastestBoostWebsite() {
                   onChange={(e) => setTelegram(e.target.value)}
                 />
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="flex overflow-hidden rounded-2xl border border-white/10 bg-black/30">
                   <button
                     type="button"
                     onClick={() => setIsParty(false)}
-                    className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${!isParty ? 'border-violet-500 bg-violet-600 text-white' : 'border-white/10 bg-black/30 text-zinc-300 hover:bg-white/5'}`}
+                    className={`flex-1 px-4 py-4 text-sm font-bold transition ${
+                      !isParty
+                        ? 'bg-zinc-800 text-white shadow-inner'
+                        : 'text-zinc-400 hover:bg-white/5'
+                    }`}
                   >
                     Solo
                   </button>
+
                   <button
                     type="button"
                     onClick={() => setIsParty(true)}
-                    className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${isParty ? 'border-violet-500 bg-violet-600 text-white' : 'border-white/10 bg-black/30 text-zinc-300 hover:bg-white/5'}`}
+                    className={`flex-1 px-4 py-4 text-sm font-bold transition ${
+                      isParty
+                        ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/40'
+                        : 'text-zinc-400 hover:bg-white/5'
+                    }`}
                   >
                     Party
                   </button>
@@ -282,22 +332,42 @@ export default function FastestBoostWebsite() {
                     <div className="text-base font-semibold text-white">
                       {result.currentElo} elo - {result.targetElo} elo
                     </div>
-                    <div>Games: <span className="text-white">{result.roundedGames}</span></div>
-                    <div>Price: <span className="text-white">{result.roundedBasePrice}</span> <span className="text-zinc-500">({result.priceWithFee})</span></div>
-                    <div>Price per game: <span className="text-violet-300">{result.pricePerGame}</span></div>
+                    <div>
+                      Games:{' '}
+                      <span className="text-white">{result.roundedGames}</span>
+                    </div>
+                    <div>
+                      Price:{' '}
+                      <span className="text-white">
+                        {result.roundedBasePrice}
+                      </span>{' '}
+                      <span className="text-zinc-500">
+                        ({result.priceWithFee})
+                      </span>
+                    </div>
+                    <div>
+                      Price per game:{' '}
+                      <span className="text-violet-300">
+                        {result.pricePerGame}
+                      </span>
+                    </div>
                     <div className="pt-2 text-xs text-zinc-500">
-                      Values in brackets include a 10% platform fee. Party mode uses a 1.5x multiplier.
+                      Values in brackets include a 10% platform fee. Party mode
+                      uses a 1.5x multiplier.
                     </div>
                   </div>
                 ) : (
                   <div className="text-zinc-400">
-                    Enter valid current and desired Elo values. Desired Elo must be higher than current Elo.
+                    Enter valid current and desired Elo values. Desired Elo must
+                    be higher than current Elo.
                   </div>
                 )}
               </div>
 
               <a
-                href={`https://t.me/wqe12e1?text=${encodeURIComponent(`${telegram ? `My telegram: ${telegram}. ` : ''}${telegramMessage}`)}`}
+                href={`https://t.me/wqe12e1?text=${encodeURIComponent(
+                  `${telegram ? `My telegram: ${telegram}. ` : ''}${telegramMessage}`
+                )}`}
                 className="mt-5 block rounded-2xl bg-violet-600 px-4 py-3 text-center font-semibold transition hover:bg-violet-500"
               >
                 Continue in Telegram
@@ -309,20 +379,33 @@ export default function FastestBoostWebsite() {
 
       <section id="services" className="mx-auto max-w-7xl px-6 py-20">
         <div className="mb-10 max-w-2xl">
-          <div className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-violet-300">Services</div>
+          <div className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-violet-300">
+            Services
+          </div>
           <h2 className="text-3xl font-black md:text-4xl">Main services</h2>
           <p className="mt-4 text-zinc-400">
-            Built around the most common CS2 Faceit requests so the customer can choose quickly and place an order without confusion.
+            Built around the most common CS2 Faceit requests so the customer can
+            choose quickly and place an order without confusion.
           </p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {services.map((serviceItem) => (
-            <div key={serviceItem.title} className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-lg shadow-black/20">
+            <div
+              key={serviceItem.title}
+              className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6 shadow-lg shadow-black/20"
+            >
               <div className="text-xl font-bold">{serviceItem.title}</div>
-              <div className="mt-2 text-sm font-semibold text-violet-300">{serviceItem.price}</div>
-              <p className="mt-4 text-sm leading-6 text-zinc-400">{serviceItem.text}</p>
-              <a href="#calculator" className="mt-6 inline-flex rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:scale-105">
+              <div className="mt-2 text-sm font-semibold text-violet-300">
+                {serviceItem.price}
+              </div>
+              <p className="mt-4 text-sm leading-6 text-zinc-400">
+                {serviceItem.text}
+              </p>
+              <a
+                href="#calculator"
+                className="mt-6 inline-flex rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:scale-105"
+              >
                 Select
               </a>
             </div>
@@ -334,12 +417,19 @@ export default function FastestBoostWebsite() {
         <div className="mx-auto max-w-7xl px-6 py-20">
           <div className="grid gap-10 md:grid-cols-2">
             <div>
-              <div className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-violet-300">Why FastestBoost</div>
-              <h2 className="text-3xl font-black md:text-4xl">A simple website that focuses on orders, not on extra complexity.</h2>
+              <div className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-violet-300">
+                Why FastestBoost
+              </div>
+              <h2 className="text-3xl font-black md:text-4xl">
+                A simple website that focuses on orders, not on extra complexity.
+              </h2>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               {advantages.map((item) => (
-                <div key={item} className="rounded-2xl border border-white/10 bg-black/30 px-4 py-4 text-sm text-zinc-200">
+                <div
+                  key={item}
+                  className="rounded-2xl border border-white/10 bg-black/30 px-4 py-4 text-sm text-zinc-200"
+                >
                   {item}
                 </div>
               ))}
@@ -350,18 +440,27 @@ export default function FastestBoostWebsite() {
 
       <section id="how" className="mx-auto max-w-7xl px-6 py-20">
         <div className="mb-10 max-w-2xl">
-          <div className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-violet-300">How it works</div>
-          <h2 className="text-3xl font-black md:text-4xl">Simple order flow</h2>
+          <div className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-violet-300">
+            How it works
+          </div>
+          <h2 className="text-3xl font-black md:text-4xl">
+            Simple order flow
+          </h2>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {steps.map((step, index) => (
-            <div key={step.title} className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6">
+            <div
+              key={step.title}
+              className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6"
+            >
               <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-violet-600 text-sm font-bold">
                 {index + 1}
               </div>
               <div className="text-lg font-bold">{step.title}</div>
-              <p className="mt-3 text-sm leading-6 text-zinc-400">{step.text}</p>
+              <p className="mt-3 text-sm leading-6 text-zinc-400">
+                {step.text}
+              </p>
             </div>
           ))}
         </div>
@@ -370,8 +469,12 @@ export default function FastestBoostWebsite() {
       <section className="border-y border-white/10 bg-white/[0.03]">
         <div className="mx-auto max-w-7xl px-6 py-20">
           <div className="mb-10 max-w-2xl">
-            <div className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-violet-300">Example values</div>
-            <h2 className="text-3xl font-black md:text-4xl">Calculator logic used right now</h2>
+            <div className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-violet-300">
+              Example values
+            </div>
+            <h2 className="text-3xl font-black md:text-4xl">
+              Calculator logic used right now
+            </h2>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
@@ -398,10 +501,15 @@ export default function FastestBoostWebsite() {
       <section id="order" className="mx-auto max-w-7xl px-6 py-20">
         <div className="grid gap-10 md:grid-cols-2">
           <div>
-            <div className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-violet-300">Order</div>
-            <h2 className="text-3xl font-black md:text-4xl">Ready to launch FastestBoost?</h2>
+            <div className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-violet-300">
+              Order
+            </div>
+            <h2 className="text-3xl font-black md:text-4xl">
+              Ready to launch FastestBoost?
+            </h2>
             <p className="mt-4 max-w-xl text-zinc-400">
-              Use the calculator, send the details through Telegram, and start the order without extra steps.
+              Use the calculator, send the details through Telegram, and start
+              the order without extra steps.
             </p>
 
             <div className="mt-8 space-y-3 text-sm text-zinc-300">
@@ -413,7 +521,10 @@ export default function FastestBoostWebsite() {
           <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6">
             <div className="mb-5 text-xl font-bold">Contact / payment block</div>
             <div className="grid gap-4">
-              <a href="https://t.me/wqe12e1" className="rounded-2xl bg-violet-600 px-5 py-3 text-center font-semibold transition hover:bg-violet-500">
+              <a
+                href="https://t.me/wqe12e1"
+                className="rounded-2xl bg-violet-600 px-5 py-3 text-center font-semibold transition hover:bg-violet-500"
+              >
                 Open Telegram
               </a>
               <button className="rounded-2xl border border-white/10 px-5 py-3 font-semibold text-zinc-200 transition hover:bg-white/5">
@@ -421,7 +532,8 @@ export default function FastestBoostWebsite() {
               </button>
             </div>
             <div className="mt-4 text-xs leading-6 text-zinc-500">
-              Replace the payment button with your real wallet or checkout link later.
+              Replace the payment button with your real wallet or checkout link
+              later.
             </div>
           </div>
         </div>
@@ -430,15 +542,24 @@ export default function FastestBoostWebsite() {
       <section id="reviews" className="border-t border-white/10 bg-white/[0.03]">
         <div className="mx-auto max-w-7xl px-6 py-20">
           <div className="mb-10 max-w-2xl">
-            <div className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-violet-300">Reviews</div>
-            <h2 className="text-3xl font-black md:text-4xl">Social proof block</h2>
+            <div className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-violet-300">
+              Reviews
+            </div>
+            <h2 className="text-3xl font-black md:text-4xl">
+              Social proof block
+            </h2>
           </div>
 
           <div className="grid gap-6 md:grid-cols-3">
             {reviews.map((review) => (
-              <div key={review.name} className="rounded-[28px] border border-white/10 bg-black/30 p-6">
+              <div
+                key={review.name}
+                className="rounded-[28px] border border-white/10 bg-black/30 p-6"
+              >
                 <div className="text-lg font-bold">{review.name}</div>
-                <p className="mt-4 text-sm leading-6 text-zinc-400">“{review.text}”</p>
+                <p className="mt-4 text-sm leading-6 text-zinc-400">
+                  “{review.text}”
+                </p>
               </div>
             ))}
           </div>
