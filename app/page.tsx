@@ -19,7 +19,18 @@ const ELO_RULES = [
 
 const PARTY_MULTIPLIER = 1.5;
 const EXPRESS_MULTIPLIER = 1.25;
-const RUB_PER_USD = 90; // можешь поменять курс здесь
+const RUB_PER_USD = 90;
+
+function formatRub(value: number) {
+  return new Intl.NumberFormat('ru-RU').format(Math.round(value));
+}
+
+function formatUsd(value: number) {
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
 
 function calculateBoost(
   currentEloRaw: string,
@@ -33,7 +44,6 @@ function calculateBoost(
   if (!Number.isFinite(currentElo) || !Number.isFinite(targetElo)) return null;
   if (targetElo <= currentElo) return null;
 
-  let games = 0;
   let basePrice = 0;
   let pointer = currentElo;
 
@@ -54,7 +64,6 @@ function calculateBoost(
       pricePerGame *= PARTY_MULTIPLIER;
     }
 
-    games += segmentGames;
     basePrice += segmentGames * pricePerGame;
     pointer = segmentEnd;
   }
@@ -63,18 +72,13 @@ function calculateBoost(
     basePrice *= EXPRESS_MULTIPLIER;
   }
 
-  const roundedGames = Math.round(games);
   const roundedBasePrice = Math.round(basePrice);
-  const pricePerGame =
-    roundedGames > 0 ? Math.round(roundedBasePrice / roundedGames) : 0;
   const priceUsd = Math.round((roundedBasePrice / RUB_PER_USD) * 100) / 100;
 
   return {
     currentElo,
     targetElo,
-    roundedGames,
     roundedBasePrice,
-    pricePerGame,
     priceUsd,
   };
 }
@@ -87,40 +91,42 @@ export default function FastestBoostWebsite() {
   const [isParty, setIsParty] = useState(false);
   const [isExpress, setIsExpress] = useState(false);
 
-  const result = useMemo(
-    () => calculateBoost(currentElo, targetElo, isParty, isExpress),
-    [currentElo, targetElo, isParty, isExpress]
-  );
+  const isEloService = service === 'Faceit Elo Boost';
+
+  const result = useMemo(() => {
+    if (!isEloService) return null;
+    return calculateBoost(currentElo, targetElo, isParty, isExpress);
+  }, [currentElo, targetElo, isParty, isExpress, isEloService]);
 
   const services = [
     {
       title: 'Faceit Elo Boost',
-      price: 'calculator based',
+      price: 'automatic calculator',
       text: 'Classic Elo boosting with automatic calculation based on your current and desired Elo.',
     },
     {
       title: 'Faceit Level Boost',
-      price: 'custom price',
+      price: 'price on request',
       text: 'Upgrade your account from the current Faceit level to the target level you want.',
     },
     {
       title: 'Faceit Wins Boost',
-      price: 'custom price',
+      price: 'price on request',
       text: 'Order a fixed number of wins for a simple and clear boost option.',
     },
     {
       title: 'Faceit Stats Boost',
-      price: 'custom price',
+      price: 'price on request',
       text: 'Focused boost option for better account stats like KD, average kills and overall profile.',
     },
     {
       title: 'Duo Queue / Party Boost',
-      price: '1.5x calculator',
-      text: 'Play together with a booster in party format with a higher rate than solo boosting.',
+      price: 'price on request',
+      text: 'Play together with a booster in party format for a more comfortable experience.',
     },
     {
       title: 'Faceit Coaching',
-      price: 'custom price',
+      price: 'price on request',
       text: 'One-on-one help for players who want to improve mechanics, aim and decision making.',
     },
   ];
@@ -137,11 +143,11 @@ export default function FastestBoostWebsite() {
   const steps = [
     {
       title: 'Choose service',
-      text: 'Select the service you need: Elo Boost, Level Boost, Wins Boost, Stats Boost, Party Boost or Coaching.',
+      text: 'Select the service you need and send your order in a few clicks.',
     },
     {
       title: 'Use calculator',
-      text: 'Enter your current Elo, target Elo and choose Solo, Party or Express mode.',
+      text: 'The calculator works for Faceit Elo Boost. Other services are priced manually.',
     },
     {
       title: 'Pay for order',
@@ -169,8 +175,8 @@ export default function FastestBoostWebsite() {
   ];
 
   const telegramMessage = result
-    ? `Hello, I want to order ${isExpress ? 'Express ' : ''}${isParty ? 'Party' : 'Solo'} Faceit boost from ${result.currentElo} Elo to ${result.targetElo} Elo. Price: ${result.roundedBasePrice} RUB / ${result.priceUsd} USD.`
-    : 'Hello, I want to order a Faceit boost.';
+    ? `Hello, I want to order ${isExpress ? 'Express ' : ''}${isParty ? 'Party ' : ''}${service} from ${result.currentElo} Elo to ${result.targetElo} Elo. Price: ${formatRub(result.roundedBasePrice)} RUB / ${formatUsd(result.priceUsd)} USD.`
+    : `Hello, I want to order ${service}.`;
 
   return (
     <div className="min-h-screen bg-[#070707] text-white">
@@ -269,7 +275,13 @@ export default function FastestBoostWebsite() {
                   </div>
                 </div>
                 <div className="rounded-xl bg-violet-500/15 px-3 py-1 text-xs font-semibold text-violet-200">
-                  {isExpress ? 'Express' : isParty ? 'Party' : 'Solo'}
+                  {!isEloService
+                    ? 'Manual Price'
+                    : isExpress
+                      ? 'Express'
+                      : isParty
+                        ? 'Party'
+                        : 'Solo'}
                 </div>
               </div>
 
@@ -287,20 +299,94 @@ export default function FastestBoostWebsite() {
                   <option>Faceit Coaching</option>
                 </select>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <input
-                    className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none"
-                    placeholder="Current Elo"
-                    value={currentElo}
-                    onChange={(e) => setCurrentElo(e.target.value)}
-                  />
-                  <input
-                    className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none"
-                    placeholder="Desired Elo"
-                    value={targetElo}
-                    onChange={(e) => setTargetElo(e.target.value)}
-                  />
-                </div>
+                {isEloService ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <input
+                        className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none"
+                        placeholder="Current Elo"
+                        value={currentElo}
+                        onChange={(e) => setCurrentElo(e.target.value)}
+                      />
+                      <input
+                        className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none"
+                        placeholder="Desired Elo"
+                        value={targetElo}
+                        onChange={(e) => setTargetElo(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <button
+                        type="button"
+                        onClick={() => setIsParty(false)}
+                        className={`group relative overflow-hidden rounded-2xl border px-4 py-4 text-sm font-bold transition ${
+                          !isParty
+                            ? 'border-white/20 bg-gradient-to-br from-zinc-700 to-zinc-900 text-white shadow-lg'
+                            : 'border-white/10 bg-black/30 text-zinc-400 hover:bg-white/5'
+                        }`}
+                      >
+                        <div className="text-base">Solo</div>
+                        <div className="mt-1 text-xs font-medium opacity-80">
+                          Standard price
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsParty(true)}
+                        className={`group relative overflow-hidden rounded-2xl border px-4 py-4 text-sm font-bold transition ${
+                          isParty
+                            ? 'border-violet-400/50 bg-gradient-to-br from-violet-500 to-fuchsia-600 text-white shadow-lg shadow-violet-600/30'
+                            : 'border-white/10 bg-black/30 text-zinc-400 hover:bg-white/5'
+                        }`}
+                      >
+                        <div className="text-base">Party</div>
+                        <div className="mt-1 text-xs font-medium opacity-80">
+                          1.5x multiplier
+                        </div>
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsExpress((prev) => !prev)}
+                      className={`relative overflow-hidden rounded-2xl border px-5 py-4 text-left transition ${
+                        isExpress
+                          ? 'border-emerald-400/50 bg-gradient-to-r from-emerald-500 to-lime-500 text-white shadow-lg shadow-emerald-500/25'
+                          : 'border-white/10 bg-black/30 text-zinc-300 hover:bg-white/5'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <div className="text-base font-bold">Express Boost</div>
+                          <div className="mt-1 text-xs opacity-80">
+                            Priority order +25% to price
+                          </div>
+                        </div>
+                        <div
+                          className={`rounded-full px-3 py-1 text-xs font-bold ${
+                            isExpress
+                              ? 'bg-white/20 text-white'
+                              : 'bg-white/5 text-zinc-400'
+                          }`}
+                        >
+                          {isExpress ? 'ON' : 'OFF'}
+                        </div>
+                      </div>
+                    </button>
+                  </>
+                ) : (
+                  <div className="rounded-2xl border border-white/10 bg-black/30 p-5 text-sm text-zinc-300">
+                    <div className="text-base font-semibold text-white">
+                      Manual pricing
+                    </div>
+                    <div className="mt-2 text-zinc-400">
+                      This service is priced manually. Click the Telegram button
+                      below and send your request.
+                    </div>
+                  </div>
+                )}
 
                 <input
                   className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none"
@@ -308,75 +394,37 @@ export default function FastestBoostWebsite() {
                   value={telegram}
                   onChange={(e) => setTelegram(e.target.value)}
                 />
-
-                <div className="flex overflow-hidden rounded-2xl border border-white/10 bg-black/30">
-                  <button
-                    type="button"
-                    onClick={() => setIsParty(false)}
-                    className={`flex-1 px-4 py-4 text-sm font-bold transition ${
-                      !isParty
-                        ? 'bg-zinc-800 text-white shadow-inner'
-                        : 'text-zinc-400 hover:bg-white/5'
-                    }`}
-                  >
-                    Solo
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsParty(true)}
-                    className={`flex-1 px-4 py-4 text-sm font-bold transition ${
-                      isParty
-                        ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/40'
-                        : 'text-zinc-400 hover:bg-white/5'
-                    }`}
-                  >
-                    Party
-                  </button>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setIsExpress((prev) => !prev)}
-                  className={`rounded-2xl px-4 py-4 text-sm font-bold transition ${
-                    isExpress
-                      ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
-                      : 'border border-white/10 bg-black/30 text-zinc-300 hover:bg-white/5'
-                  }`}
-                >
-                  Express Boost {isExpress ? 'ON' : 'OFF'} (+25%)
-                </button>
               </div>
 
               <div className="mt-5 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-zinc-300">
-                {result ? (
-                  <div className="space-y-2">
-                    <div className="text-base font-semibold text-white">
-                      {result.currentElo} elo - {result.targetElo} elo
+                {isEloService ? (
+                  result ? (
+                    <div className="space-y-2">
+                      <div className="text-base font-semibold text-white">
+                        {result.currentElo} elo - {result.targetElo} elo
+                      </div>
+                      <div>
+                        Price RUB:{' '}
+                        <span className="text-white">
+                          {formatRub(result.roundedBasePrice)}
+                        </span>
+                      </div>
+                      <div>
+                        Price USD:{' '}
+                        <span className="text-violet-300">
+                          {formatUsd(result.priceUsd)}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      Price RUB:{' '}
-                      <span className="text-white">
-                        {result.roundedBasePrice}
-                      </span>
+                  ) : (
+                    <div className="text-zinc-400">
+                      Enter valid current and desired Elo values. Desired Elo must
+                      be higher than current Elo.
                     </div>
-                    <div>
-                      Price USD:{' '}
-                      <span className="text-violet-300">
-                        {result.priceUsd}
-                      </span>
-                    </div>
-                    <div>
-                      Price per game:{' '}
-                      <span className="text-zinc-400">
-                        {result.pricePerGame}
-                      </span>
-                    </div>
-                  </div>
+                  )
                 ) : (
                   <div className="text-zinc-400">
-                    Enter valid current and desired Elo values. Desired Elo must
-                    be higher than current Elo.
+                    Price for this service is calculated manually.
                   </div>
                 )}
               </div>
