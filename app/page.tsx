@@ -18,12 +18,14 @@ const ELO_RULES = [
 ];
 
 const PARTY_MULTIPLIER = 1.5;
-const PLATFORM_FEE_MULTIPLIER = 1.1;
+const EXPRESS_MULTIPLIER = 1.25;
+const RUB_PER_USD = 90; // можешь поменять курс здесь
 
 function calculateBoost(
   currentEloRaw: string,
   targetEloRaw: string,
-  isParty: boolean
+  isParty: boolean,
+  isExpress: boolean
 ) {
   const currentElo = Number(currentEloRaw);
   const targetElo = Number(targetEloRaw);
@@ -45,28 +47,35 @@ function calculateBoost(
     const segmentEnd = Math.min(targetElo, rule.max);
     const eloDelta = segmentEnd - pointer;
     const segmentGames = (eloDelta / 1000) * rule.gamesPer1000;
-    const pricePerGame = isParty
-      ? rule.soloPricePerGame * PARTY_MULTIPLIER
-      : rule.soloPricePerGame;
+
+    let pricePerGame = rule.soloPricePerGame;
+
+    if (isParty) {
+      pricePerGame *= PARTY_MULTIPLIER;
+    }
 
     games += segmentGames;
     basePrice += segmentGames * pricePerGame;
     pointer = segmentEnd;
   }
 
+  if (isExpress) {
+    basePrice *= EXPRESS_MULTIPLIER;
+  }
+
   const roundedGames = Math.round(games);
   const roundedBasePrice = Math.round(basePrice);
-  const priceWithFee = Math.round(roundedBasePrice * PLATFORM_FEE_MULTIPLIER);
   const pricePerGame =
     roundedGames > 0 ? Math.round(roundedBasePrice / roundedGames) : 0;
+  const priceUsd = Math.round((roundedBasePrice / RUB_PER_USD) * 100) / 100;
 
   return {
     currentElo,
     targetElo,
     roundedGames,
     roundedBasePrice,
-    priceWithFee,
     pricePerGame,
+    priceUsd,
   };
 }
 
@@ -76,10 +85,11 @@ export default function FastestBoostWebsite() {
   const [targetElo, setTargetElo] = useState('2000');
   const [telegram, setTelegram] = useState('');
   const [isParty, setIsParty] = useState(false);
+  const [isExpress, setIsExpress] = useState(false);
 
   const result = useMemo(
-    () => calculateBoost(currentElo, targetElo, isParty),
-    [currentElo, targetElo, isParty]
+    () => calculateBoost(currentElo, targetElo, isParty, isExpress),
+    [currentElo, targetElo, isParty, isExpress]
   );
 
   const services = [
@@ -131,7 +141,7 @@ export default function FastestBoostWebsite() {
     },
     {
       title: 'Use calculator',
-      text: 'Enter your current Elo, target Elo and choose Solo or Party mode to see the estimate.',
+      text: 'Enter your current Elo, target Elo and choose Solo, Party or Express mode.',
     },
     {
       title: 'Pay for order',
@@ -159,7 +169,7 @@ export default function FastestBoostWebsite() {
   ];
 
   const telegramMessage = result
-    ? `Hello, I want to order ${isParty ? 'Party' : 'Solo'} Faceit boost from ${result.currentElo} Elo to ${result.targetElo} Elo. Estimated games: ${result.roundedGames}. Price: ${result.roundedBasePrice} RUB.`
+    ? `Hello, I want to order ${isExpress ? 'Express ' : ''}${isParty ? 'Party' : 'Solo'} Faceit boost from ${result.currentElo} Elo to ${result.targetElo} Elo. Price: ${result.roundedBasePrice} RUB / ${result.priceUsd} USD.`
     : 'Hello, I want to order a Faceit boost.';
 
   return (
@@ -255,11 +265,11 @@ export default function FastestBoostWebsite() {
                 <div>
                   <div className="text-lg font-bold">Faceit calculator</div>
                   <div className="text-sm text-zinc-400">
-                    Price estimate based on your calculator
+                    Price in RUB and USD
                   </div>
                 </div>
                 <div className="rounded-xl bg-violet-500/15 px-3 py-1 text-xs font-semibold text-violet-200">
-                  {isParty ? 'Party' : 'Solo'}
+                  {isExpress ? 'Express' : isParty ? 'Party' : 'Solo'}
                 </div>
               </div>
 
@@ -324,6 +334,18 @@ export default function FastestBoostWebsite() {
                     Party
                   </button>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsExpress((prev) => !prev)}
+                  className={`rounded-2xl px-4 py-4 text-sm font-bold transition ${
+                    isExpress
+                      ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
+                      : 'border border-white/10 bg-black/30 text-zinc-300 hover:bg-white/5'
+                  }`}
+                >
+                  Express Boost {isExpress ? 'ON' : 'OFF'} (+25%)
+                </button>
               </div>
 
               <div className="mt-5 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-zinc-300">
@@ -333,27 +355,22 @@ export default function FastestBoostWebsite() {
                       {result.currentElo} elo - {result.targetElo} elo
                     </div>
                     <div>
-                      Games:{' '}
-                      <span className="text-white">{result.roundedGames}</span>
-                    </div>
-                    <div>
-                      Price:{' '}
+                      Price RUB:{' '}
                       <span className="text-white">
                         {result.roundedBasePrice}
-                      </span>{' '}
-                      <span className="text-zinc-500">
-                        ({result.priceWithFee})
+                      </span>
+                    </div>
+                    <div>
+                      Price USD:{' '}
+                      <span className="text-violet-300">
+                        {result.priceUsd}
                       </span>
                     </div>
                     <div>
                       Price per game:{' '}
-                      <span className="text-violet-300">
+                      <span className="text-zinc-400">
                         {result.pricePerGame}
                       </span>
-                    </div>
-                    <div className="pt-2 text-xs text-zinc-500">
-                      Values in brackets include a 10% platform fee. Party mode
-                      uses a 1.5x multiplier.
                     </div>
                   </div>
                 ) : (
@@ -463,38 +480,6 @@ export default function FastestBoostWebsite() {
               </p>
             </div>
           ))}
-        </div>
-      </section>
-
-      <section className="border-y border-white/10 bg-white/[0.03]">
-        <div className="mx-auto max-w-7xl px-6 py-20">
-          <div className="mb-10 max-w-2xl">
-            <div className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-violet-300">
-              Example values
-            </div>
-            <h2 className="text-3xl font-black md:text-4xl">
-              Calculator logic used right now
-            </h2>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="rounded-[28px] border border-white/10 bg-black/30 p-6">
-              <div className="text-lg font-bold">0 - 2000 Elo</div>
-              <div className="mt-4 space-y-2 text-sm text-zinc-300">
-                <div>32 games per 1000 Elo</div>
-                <div>Solo: 165.125 per game</div>
-                <div>Party: 247.69 per game</div>
-              </div>
-            </div>
-            <div className="rounded-[28px] border border-white/10 bg-black/30 p-6">
-              <div className="text-lg font-bold">2000 - 3000 Elo</div>
-              <div className="mt-4 space-y-2 text-sm text-zinc-300">
-                <div>40 games per 1000 Elo</div>
-                <div>Solo: 535.425 per game</div>
-                <div>Party: 803.14 per game</div>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
