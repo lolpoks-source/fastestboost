@@ -18,7 +18,6 @@ const ELO_RULES = [
 ];
 
 const PARTY_MULTIPLIER = 1.5;
-const EXPRESS_MULTIPLIER = 1.25;
 const RUB_PER_USD = 90;
 
 function formatRub(value: number) {
@@ -32,7 +31,7 @@ function formatUsd(value: number) {
   }).format(value);
 }
 
-function calcBasePrice(currentEloRaw: string, targetEloRaw: string, isParty: boolean) {
+function calcEloBasePrice(currentEloRaw: string, targetEloRaw: string, isParty: boolean) {
   const currentElo = Number(currentEloRaw);
   const targetElo = Number(targetEloRaw);
 
@@ -58,10 +57,26 @@ function calcBasePrice(currentEloRaw: string, targetEloRaw: string, isParty: boo
   return Math.round(basePrice);
 }
 
+function calcWinsBasePrice(currentEloRaw: string, winsCountRaw: string, isParty: boolean) {
+  const currentElo = Number(currentEloRaw);
+  const winsCount = Number(winsCountRaw);
+
+  if (!Number.isFinite(currentElo) || !Number.isFinite(winsCount)) return null;
+  if (winsCount <= 0) return null;
+
+  let pricePerWin = currentElo < 2000 ? 165.125 : 535.425;
+  if (isParty) {
+    pricePerWin *= PARTY_MULTIPLIER;
+  }
+
+  return Math.round(winsCount * pricePerWin);
+}
+
 export default function FastestBoostWebsite() {
-  const [service, setService] = useState('By Elo');
+  const [service, setService] = useState('By Wins');
   const [currentElo, setCurrentElo] = useState('1200');
   const [targetElo, setTargetElo] = useState('2000');
+  const [winsCount, setWinsCount] = useState('6');
   const [telegram, setTelegram] = useState('');
   const [boostType, setBoostType] = useState<'solo' | 'party'>('solo');
   const [specificBooster, setSpecificBooster] = useState('First Available');
@@ -77,12 +92,19 @@ export default function FastestBoostWebsite() {
   });
 
   const isEloService = service === 'By Elo';
+  const isWinsService = service === 'By Wins';
+  const isCalcService = isEloService || isWinsService;
   const eloDiff = Math.max(0, Number(targetElo || 0) - Number(currentElo || 0));
 
   const pricing = useMemo(() => {
-    if (!isEloService) return null;
+    let basePrice: number | null = null;
 
-    const basePrice = calcBasePrice(currentElo, targetElo, boostType === 'party');
+    if (isEloService) {
+      basePrice = calcEloBasePrice(currentElo, targetElo, boostType === 'party');
+    } else if (isWinsService) {
+      basePrice = calcWinsBasePrice(currentElo, winsCount, boostType === 'party');
+    }
+
     if (basePrice === null) return null;
 
     let finalMultiplier = 1;
@@ -94,7 +116,7 @@ export default function FastestBoostWebsite() {
     if (options.noPartyMembers) finalMultiplier += 0.5;
     if (options.noVoiceInGame) finalMultiplier += 0.1;
 
-    let finalPrice = Math.round(basePrice * finalMultiplier);
+    const finalPrice = Math.round(basePrice * finalMultiplier);
     const finalUsd = finalPrice / RUB_PER_USD;
 
     return {
@@ -102,19 +124,13 @@ export default function FastestBoostWebsite() {
       finalPrice,
       finalUsd,
     };
-  }, [currentElo, targetElo, boostType, options, isEloService]);
+  }, [currentElo, targetElo, winsCount, boostType, options, isEloService, isWinsService]);
 
   const telegramMessage = pricing
-    ? `Hello, I want to order ${service} from ${currentElo} Elo to ${targetElo} Elo. Boost type: ${boostType}. Final price: ${formatRub(pricing.finalPrice)} RUB / ${formatUsd(pricing.finalUsd)} USD. Telegram: ${telegram || 'not specified'}.`
+    ? `Hello, I want to order ${service}${isEloService ? ` from ${currentElo} Elo to ${targetElo} Elo` : ''}${isWinsService ? ` with ${winsCount} net wins from current Elo ${currentElo}` : ''}. Boost type: ${boostType}. Final price: ${formatRub(pricing.finalPrice)} RUB / ${formatUsd(pricing.finalUsd)} USD. Telegram: ${telegram || 'not specified'}.`
     : `Hello, I want to order ${service}. Telegram: ${telegram || 'not specified'}.`;
 
-  const services = [
-    'By Elo',
-    'By Level',
-    'By Wins',
-    'By Stats',
-    'Faceit Coaching',
-  ];
+  const services = ['By Elo', 'By Wins', 'Elo Deranking'];
 
   const toggleOption = (key: keyof typeof options) => {
     setOptions((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -132,7 +148,7 @@ export default function FastestBoostWebsite() {
 
           <div className="grid gap-8 lg:grid-cols-[1.7fr_0.95fr]">
             <div className="rounded-[32px] border border-white/10 bg-[#ececec] p-5 text-black shadow-2xl shadow-black/30">
-              <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-5">
+              <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
                 {services.map((item) => (
                   <button
                     key={item}
@@ -229,11 +245,85 @@ export default function FastestBoostWebsite() {
                     />
                   </div>
                 </div>
+              ) : isWinsService ? (
+                <div className="space-y-8">
+                  <div>
+                    <div className="mb-5 flex items-center gap-3 text-2xl font-bold text-zinc-900">
+                      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-200 text-xl">1</span>
+                      <span>Select Current Elo and Desired Wins</span>
+                    </div>
+
+                    <div className="grid items-center gap-6 md:grid-cols-[1.2fr_auto]">
+                      <div className="rounded-[28px] border border-zinc-300 bg-white p-5 shadow-sm">
+                        <div className="mb-4 text-center text-xl font-bold text-red-600">Current Elo</div>
+                        <input
+                          type="number"
+                          value={currentElo}
+                          onChange={(e) => setCurrentElo(e.target.value)}
+                          className="w-full rounded-2xl border border-zinc-300 bg-zinc-50 px-4 py-4 text-center text-4xl font-black outline-none"
+                        />
+                      </div>
+
+                      <div className="rounded-[28px] border border-zinc-300 bg-white p-5 text-center shadow-sm">
+                        <div className="mb-4 text-xl font-bold text-red-600">Net Wins</div>
+                        <input
+                          type="number"
+                          min="1"
+                          value={winsCount}
+                          onChange={(e) => setWinsCount(e.target.value)}
+                          className="w-40 rounded-2xl border border-zinc-300 bg-zinc-50 px-4 py-4 text-center text-4xl font-black outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="mb-5 flex items-center gap-3 text-2xl font-bold text-zinc-900">
+                      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-200 text-xl">2</span>
+                      <span>Choose Boost Type</span>
+                    </div>
+
+                    <div className="flex max-w-xl overflow-hidden rounded-full bg-zinc-200 p-1 shadow-inner">
+                      <button
+                        type="button"
+                        onClick={() => setBoostType('solo')}
+                        className={`flex-1 rounded-full px-6 py-4 text-lg font-bold transition ${
+                          boostType === 'solo'
+                            ? 'bg-red-600 text-white shadow-lg'
+                            : 'text-zinc-500 hover:text-zinc-900'
+                        }`}
+                      >
+                        Solo / Pilot
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBoostType('party')}
+                        className={`flex-1 rounded-full px-6 py-4 text-lg font-bold transition ${
+                          boostType === 'party'
+                            ? 'bg-red-600 text-white shadow-lg'
+                            : 'text-zinc-500 hover:text-zinc-900'
+                        }`}
+                      >
+                        Duo / Lobby
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[28px] border border-zinc-300 bg-white p-5 shadow-sm">
+                    <div className="mb-3 text-lg font-bold text-zinc-900">Your Telegram</div>
+                    <input
+                      value={telegram}
+                      onChange={(e) => setTelegram(e.target.value)}
+                      placeholder="@yourtelegram"
+                      className="w-full rounded-2xl border border-zinc-300 bg-zinc-50 px-4 py-4 text-lg outline-none"
+                    />
+                  </div>
+                </div>
               ) : (
                 <div className="rounded-[28px] border border-zinc-300 bg-white p-8 text-zinc-900 shadow-sm">
                   <div className="text-2xl font-bold">Manual pricing</div>
                   <div className="mt-3 text-lg text-zinc-600">
-                    This calculator layout is active only for <span className="font-bold">By Elo</span>. For other services, the price is discussed manually in Telegram.
+                    This service is priced manually in Telegram.
                   </div>
                   <div className="mt-6">
                     <input
@@ -256,7 +346,7 @@ export default function FastestBoostWebsite() {
               <div className="rounded-2xl border border-zinc-300 bg-white p-4 shadow-sm">
                 <div className="text-lg font-black text-zinc-900">{service}</div>
                 <div className="mt-1 text-sm font-semibold text-zinc-500">
-                  {isEloService ? `${boostType === 'solo' ? 'Solo / Pilot' : 'Duo / Lobby'}` : 'Manual order'}
+                  {isCalcService ? `${boostType === 'solo' ? 'Solo / Pilot' : 'Duo / Lobby'}` : 'Manual order'}
                 </div>
 
                 <div className="mt-4 space-y-3">
@@ -274,13 +364,11 @@ export default function FastestBoostWebsite() {
                       <div className="text-sm font-medium text-zinc-800">{label}</div>
                       <button
                         type="button"
-                        onClick={() => isEloService && toggleOption(key as keyof typeof options)}
-                        disabled={!isEloService}
+                        onClick={() => isCalcService && toggleOption(key as keyof typeof options)}
+                        disabled={!isCalcService}
                         className={`relative h-8 w-16 rounded-full transition ${
-                          options[key as keyof typeof options]
-                            ? 'bg-red-500'
-                            : 'bg-zinc-300'
-                        } ${!isEloService ? 'cursor-not-allowed opacity-50' : ''}`}
+                          options[key as keyof typeof options] ? 'bg-red-500' : 'bg-zinc-300'
+                        } ${!isCalcService ? 'cursor-not-allowed opacity-50' : ''}`}
                       >
                         <span
                           className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition ${
