@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { Trophy, BarChart3, Zap } from 'lucide-react';
 
 const ELO_RULES = [
   {
@@ -130,11 +131,16 @@ export default function FastestBoostWebsite() {
     ? `Hello, I want to order ${service}${isEloService ? ` from ${currentElo} Elo to ${targetElo} Elo` : ''}${isWinsService ? ` with ${winsCount} net wins from current Elo ${currentElo}` : ''}. Boost type: ${boostType}. Final price: ${formatRub(pricing.finalPrice)} RUB / ${formatUsd(pricing.finalUsd)} USD. Telegram: ${telegram || 'not specified'}.`
     : `Hello, I want to order ${service}. Telegram: ${telegram || 'not specified'}.`;
 
-  const services = ['By Elo', 'By Wins', 'Elo Deranking'];
+  const services = [
+    { label: 'By Elo', icon: Trophy },
+    { label: 'By Wins', icon: Zap },
+  ];
 
   const toggleOption = (key: keyof typeof options) => {
     setOptions((prev) => ({ ...prev, [key]: !prev[key] }));
   };
+
+  const winsNumber = Math.max(1, Number(winsCount) || 1);
 
   return (
     <div className="min-h-screen bg-[#111111] text-white">
@@ -148,19 +154,30 @@ export default function FastestBoostWebsite() {
 
           <div className="grid gap-8 lg:grid-cols-[1.7fr_0.95fr]">
             <div className="rounded-[32px] border border-white/10 bg-[#ececec] p-5 text-black shadow-2xl shadow-black/30">
-              <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
-                {services.map((item) => (
+              <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-2">
+                {services.map(({ label, icon: Icon }) => (
                   <button
-                    key={item}
+                    key={label}
                     type="button"
-                    onClick={() => setService(item)}
-                    className={`rounded-2xl border px-4 py-4 text-center text-sm font-bold transition ${
-                      service === item
+                    onClick={() => setService(label)}
+                    className="group rounded-[28px]"
+                  >
+                    <div className="mb-3 flex justify-center">
+                      <div className={`flex h-20 w-20 items-center justify-center rounded-full border transition ${
+                        service === label
+                          ? 'border-red-200 bg-white text-red-600 shadow-lg'
+                          : 'border-zinc-200 bg-[#f3f3f3] text-red-500'
+                      }`}>
+                        <Icon size={38} strokeWidth={2.5} />
+                      </div>
+                    </div>
+                    <div className={`rounded-2xl border px-4 py-4 text-center text-sm font-bold transition ${
+                      service === label
                         ? 'border-red-600 bg-red-600 text-white shadow-lg'
                         : 'border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-100'
-                    }`}
-                  >
-                    {item}
+                    }`}>
+                      {label}
+                    </div>
                   </button>
                 ))}
               </div>
@@ -245,7 +262,7 @@ export default function FastestBoostWebsite() {
                     />
                   </div>
                 </div>
-              ) : isWinsService ? (
+              ) : (
                 <div className="space-y-8">
                   <div>
                     <div className="mb-5 flex items-center gap-3 text-2xl font-bold text-zinc-900">
@@ -253,7 +270,7 @@ export default function FastestBoostWebsite() {
                       <span>Select Current Elo and Desired Wins</span>
                     </div>
 
-                    <div className="grid items-center gap-6 md:grid-cols-[1.2fr_auto]">
+                    <div className="grid items-center gap-6 md:grid-cols-[1fr_auto]">
                       <div className="rounded-[28px] border border-zinc-300 bg-white p-5 shadow-sm">
                         <div className="mb-4 text-center text-xl font-bold text-red-600">Current Elo</div>
                         <input
@@ -266,13 +283,32 @@ export default function FastestBoostWebsite() {
 
                       <div className="rounded-[28px] border border-zinc-300 bg-white p-5 text-center shadow-sm">
                         <div className="mb-4 text-xl font-bold text-red-600">Net Wins</div>
-                        <input
-                          type="number"
-                          min="1"
-                          value={winsCount}
-                          onChange={(e) => setWinsCount(e.target.value)}
-                          className="w-40 rounded-2xl border border-zinc-300 bg-zinc-50 px-4 py-4 text-center text-4xl font-black outline-none"
-                        />
+                        <div className="text-5xl font-black text-red-600">{winsNumber}</div>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 rounded-[28px] border border-zinc-300 bg-white p-6 shadow-sm">
+                      <div className="mb-4 flex items-center justify-between">
+                        <div className="text-xl font-bold text-zinc-900">Wins slider</div>
+                        <div className="inline-flex rounded-full border-2 border-red-500 px-4 py-2 text-lg font-bold text-red-600">
+                          {winsNumber} Wins
+                        </div>
+                      </div>
+
+                      <input
+                        type="range"
+                        min="1"
+                        max="30"
+                        value={winsNumber}
+                        onChange={(e) => setWinsCount(e.target.value)}
+                        className="h-3 w-full cursor-pointer appearance-none rounded-full bg-red-500 accent-red-600"
+                      />
+
+                      <div className="mt-3 flex justify-between text-sm font-medium text-zinc-500">
+                        <span>1</span>
+                        <span>10</span>
+                        <span>20</span>
+                        <span>30</span>
                       </div>
                     </div>
                   </div>
@@ -319,21 +355,6 @@ export default function FastestBoostWebsite() {
                     />
                   </div>
                 </div>
-              ) : (
-                <div className="rounded-[28px] border border-zinc-300 bg-white p-8 text-zinc-900 shadow-sm">
-                  <div className="text-2xl font-bold">Manual pricing</div>
-                  <div className="mt-3 text-lg text-zinc-600">
-                    This service is priced manually in Telegram.
-                  </div>
-                  <div className="mt-6">
-                    <input
-                      value={telegram}
-                      onChange={(e) => setTelegram(e.target.value)}
-                      placeholder="@yourtelegram"
-                      className="w-full rounded-2xl border border-zinc-300 bg-zinc-50 px-4 py-4 text-lg outline-none"
-                    />
-                  </div>
-                </div>
               )}
             </div>
 
@@ -346,7 +367,7 @@ export default function FastestBoostWebsite() {
               <div className="rounded-2xl border border-zinc-300 bg-white p-4 shadow-sm">
                 <div className="text-lg font-black text-zinc-900">{service}</div>
                 <div className="mt-1 text-sm font-semibold text-zinc-500">
-                  {isCalcService ? `${boostType === 'solo' ? 'Solo / Pilot' : 'Duo / Lobby'}` : 'Manual order'}
+                  {boostType === 'solo' ? 'Solo / Pilot' : 'Duo / Lobby'}
                 </div>
 
                 <div className="mt-4 space-y-3">
@@ -364,11 +385,10 @@ export default function FastestBoostWebsite() {
                       <div className="text-sm font-medium text-zinc-800">{label}</div>
                       <button
                         type="button"
-                        onClick={() => isCalcService && toggleOption(key as keyof typeof options)}
-                        disabled={!isCalcService}
+                        onClick={() => toggleOption(key as keyof typeof options)}
                         className={`relative h-8 w-16 rounded-full transition ${
                           options[key as keyof typeof options] ? 'bg-red-500' : 'bg-zinc-300'
-                        } ${!isCalcService ? 'cursor-not-allowed opacity-50' : ''}`}
+                        }`}
                       >
                         <span
                           className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition ${
@@ -400,12 +420,7 @@ export default function FastestBoostWebsite() {
                       <div className="mt-2 text-4xl font-black text-red-600">₽{formatRub(pricing.finalPrice)}</div>
                       <div className="mt-2 text-lg font-semibold text-zinc-500">${formatUsd(pricing.finalUsd)}</div>
                     </>
-                  ) : (
-                    <>
-                      <div className="text-lg font-medium text-zinc-700">Final Price</div>
-                      <div className="mt-2 text-2xl font-black text-zinc-800">Price on request</div>
-                    </>
-                  )}
+                  ) : null}
 
                   <a
                     href={`https://t.me/wqe12e1?text=${encodeURIComponent(telegramMessage)}`}
